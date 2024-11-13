@@ -155,5 +155,39 @@ def hospital_schedule_event():
 
     return jsonify({"status": "success", "message": "Event scheduled successfully"}), 200
 
+@app.route('/api/add-donor', methods=['POST'])
+def add_donor():
+    if not session.get("user") or not session.get("role"):
+        return jsonify({"error": "User not logged in"}), 403  # Ensure user is logged in
+
+    if session.get("role") not in ["admin", "hospital"]:
+        return jsonify({"error": "Unauthorized access"}), 403  # Ensure role is admin or hospital
+
+    data = request.json
+
+    # Check for missing fields
+    name = data.get("name")
+    blood_type = data.get("bloodType")
+    eligibility = data.get("eligibility")
+    next_donation_date = data.get("nextDonationDate")
+
+    if not name or not blood_type or not eligibility or not next_donation_date:
+        return jsonify({"error": "All fields are required"}), 400
+
+    donor_data = {
+        "name": name,
+        "bloodType": blood_type,
+        "eligibility": eligibility,
+        "nextDonationDate": next_donation_date
+    }
+
+    try:
+        # Insert donor into the database
+        donors_collection.insert_one(donor_data)
+        return jsonify({"status": "success", "message": "Donor added successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": f"An error occurred while adding donor: {str(e)}"}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True)
